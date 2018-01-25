@@ -1,0 +1,26 @@
+{{define "home.html"}}
+<!DOCTYPE HTML>
+<html>
+<head>
+  <title>Timeline</title>
+
+  <style type="text/css">
+    body, html {
+      font-family: sans-serif;
+    }
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet" type="text/css" />
+  
+</head>
+<body>
+
+<div id="visualization"></div>
+
+<script type="text/javascript">
+{{template "timeline.js" .}}
+</script>
+</body>
+</html>
+{{end}}
