@@ -51,26 +51,31 @@ func (t *Timeline) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	t.Templates.ExecuteTemplate(w, "home.html", t)
 }
 
+const padding float32 = 0.1
+
 func (t *Timeline) AddEvent(content string, start time.Time) *Timeline {
 	e := Event{ID: len(t.Events), Content: content, Start: visJSTime{start}}
-
-	if t.EarliestStart == nil || start.Before(*t.EarliestStart) {
-		t.EarliestStart = &start
-	}
-
-	// TODO: Work out a sensible margin before and after the events, maybe a %
-	t.Options.Start = visJSTime{*t.EarliestStart}
-
-	if t.LatestFinish == nil || start.After(*t.LatestFinish) {
-		t.LatestFinish = &start
-	}
-
-	// TODO: Work out a sensible margin before and after the events, maybe a %
-	t.Options.End = visJSTime{*t.LatestFinish}
-
 	t.Events = append(t.Events, e)
 
+	t.updateBoundaries(&e)
+
 	return t
+}
+
+func (t *Timeline) updateBoundaries(e *Event) {
+	if t.EarliestStart == nil || e.Start.Before(*t.EarliestStart) {
+		t.EarliestStart = &e.Start.Time
+	}
+
+	if t.LatestFinish == nil || e.Start.After(*t.LatestFinish) {
+		t.LatestFinish = &e.Start.Time
+	}
+
+	span := t.LatestFinish.Sub(*t.EarliestStart)
+	paddingDuration := time.Duration(float32(span.Nanoseconds()) * padding)
+
+	t.Options.Start = visJSTime{t.EarliestStart.Add(paddingDuration * -1)}
+	t.Options.End = visJSTime{t.LatestFinish.Add(paddingDuration)}
 }
 
 func (t *Timeline) Reset() {

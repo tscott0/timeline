@@ -16,15 +16,24 @@ var t3 *timeline.Timeline
 func main() {
 	r := mux.NewRouter()
 
-	// t1: Basic timeline
-	t1 := timeline.New().
-		AddEvent("Item 1", time.Date(2014, time.April, 20, 12, 0, 0, 0, time.UTC)).
-		AddEvent("Item 2", time.Date(2014, time.April, 20, 12, 13, 0, 0, time.UTC)).
-		AddEvent("Item 3", time.Date(2014, time.April, 20, 12, 7, 0, 0, time.UTC))
+	// Example: British monarchy since 1707
+	// source of data https://en.wikipedia.org/w/index.php?title=List_of_British_monarchs&action=edit&section=4
+	monarchy := timeline.New().
+		AddEvent("Anne", time.Date(1707, time.January, 1, 0, 0, 0, 0, time.UTC)).
+		AddEvent("George I", time.Date(1714, time.January, 1, 0, 0, 0, 0, time.UTC)).
+		AddEvent("George II", time.Date(1727, time.January, 1, 0, 0, 0, 0, time.UTC)).
+		AddEvent("George III", time.Date(1760, time.January, 1, 0, 0, 0, 0, time.UTC)).
+		AddEvent("George IV", time.Date(1820, time.January, 1, 0, 0, 0, 0, time.UTC)).
+		AddEvent("William IV", time.Date(1830, time.January, 1, 0, 0, 0, 0, time.UTC)).
+		AddEvent("Victoria", time.Date(1837, time.January, 1, 0, 0, 0, 0, time.UTC)).
+		AddEvent("Edward VII", time.Date(1901, time.January, 1, 0, 0, 0, 0, time.UTC)).
+		AddEvent("George V", time.Date(1910, time.January, 1, 0, 0, 0, 0, time.UTC)).
+		AddEvent("Edward VIII", time.Date(1936, time.January, 1, 0, 0, 0, 0, time.UTC)).
+		AddEvent("George VI", time.Date(1936, time.January, 1, 0, 0, 0, 0, time.UTC))
 
-	t1.AddEvent("Item 4", time.Date(2014, time.April, 20, 12, 30, 0, 0, time.UTC))
+	monarchy.AddEvent("Elizabeth II", time.Date(1952, time.January, 1, 0, 0, 0, 0, time.UTC))
 
-	r.Handle("/t1", t1).Methods("GET")
+	r.Handle("/monarchy", monarchy).Methods("GET")
 
 	// t2: Timeline wrapped in some middleware
 	t2 = timeline.New()
