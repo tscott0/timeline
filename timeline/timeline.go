@@ -2,6 +2,7 @@ package timeline
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"net/http"
 	"time"
@@ -30,10 +31,17 @@ type Event struct {
 	Start   visJSTime `json:"start"` // TODO: Convert to time.Time
 }
 
+var homeTemplate *template.Template
+
+func init() {
+	fmt.Println("Parsing home.html template")
+	homeTemplate = template.Must(template.ParseFiles("timeline/templates/home.html",
+		"timeline/templates/timeline.js"))
+}
+
 func New() *Timeline {
 	return &Timeline{
-		Templates: template.Must(template.ParseFiles("timeline/templates/home.html",
-			"timeline/templates/timeline.js")),
+		Templates: homeTemplate,
 	}
 }
 
