@@ -19,6 +19,10 @@ func main() {
 	// Example: British monarchy since 1707
 	// source of data https://en.wikipedia.org/w/index.php?title=List_of_British_monarchs&action=edit&section=4
 	monarchy := timeline.New().
+		WithOptions(&timeline.Options{
+			FollowMouse:    true,
+			OverflowMethod: "cap",
+		}).
 		AddEvent("Anne", time.Date(1707, time.January, 1, 0, 0, 0, 0, time.UTC)).
 		AddEvent("George I", time.Date(1714, time.January, 1, 0, 0, 0, 0, time.UTC)).
 		AddEvent("George II", time.Date(1727, time.January, 1, 0, 0, 0, 0, time.UTC)).

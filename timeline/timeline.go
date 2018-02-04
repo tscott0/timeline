@@ -21,22 +21,33 @@ type Timeline struct {
 }
 
 type Options struct {
-	Start visJSTime `json:"start"`
-	End   visJSTime `json:"end"`
+	Start          *visJSTime `json:"start,omitempty"`
+	End            *visJSTime `json:"end,omitempty"`
+	FollowMouse    bool       `json:"followMouse,omitempty"`
+	OverflowMethod string     `json:"overflowMethod,omitempty"`
 }
 
 type Event struct {
-	ID      int       `json:"id"`
-	Content string    `json:"content"`
-	Start   visJSTime `json:"start"` // TODO: Convert to time.Time
+	ID      int        `json:"id"`
+	Content string     `json:"content"`
+	Start   *visJSTime `json:"start"`         // TODO: Convert to time.Time
+	End     *visJSTime `json:"end,omitempty"` // TODO: Convert to time.Time
+	Title   string     `json:"title"`
 }
+
+const padding float32 = 0.1
 
 var homeTemplate *template.Template
 
 func init() {
-	fmt.Println("Parsing home.html template")
-	homeTemplate = template.Must(template.ParseFiles("timeline/templates/home.html",
-		"timeline/templates/timeline.js"))
+	templatesToParse := []string{"timeline/templates/home.html",
+		"timeline/templates/timeline.js"}
+	fmt.Println("Parsing templates...")
+	for _, t := range templatesToParse {
+		fmt.Printf("  %s\n", t)
+	}
+
+	homeTemplate = template.Must(template.ParseFiles(templatesToParse...))
 }
 
 func New() *Timeline {
@@ -45,24 +56,60 @@ func New() *Timeline {
 	}
 }
 
-func (t *Timeline) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
+func (t *Timeline) WithOptions(o *Options) *Timeline {
+	t.Options = *o
+	return t
+}
 
-	eventData, _ := json.MarshalIndent(t.Events, "", "   ") // TODO
+func (t *Timeline) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	eventData, err := json.MarshalIndent(t.Events, "", "   ")
+	if err != nil {
+		serveError(w, r, http.StatusInternalServerError, "Failed to marshal event data")
+		return
+	}
 
 	t.EventArray = template.JS(eventData)
 
-	optionsData, _ := json.MarshalIndent(t.Options, "", "   ") // TODO
+	optionsData, err := json.MarshalIndent(t.Options, "", "   ")
+	if err != nil {
+		serveError(w, r, http.StatusInternalServerError, "Failed to marshal event options")
+		return
+	}
 
 	t.OptionsObject = template.JS(optionsData)
 
+	w.WriteHeader(http.StatusOK)
 	t.Templates.ExecuteTemplate(w, "home.html", t)
 }
 
-const padding float32 = 0.1
+func serveError(w http.ResponseWriter, r *http.Request, status int, message string) {
+	w.WriteHeader(status)
+
+	w.Write([]byte(fmt.Sprintf("%d %s - %s", status, http.StatusText(status), message)))
+}
 
 func (t *Timeline) AddEvent(content string, start time.Time) *Timeline {
-	e := Event{ID: len(t.Events), Content: content, Start: visJSTime{start}}
+	e := Event{
+		ID:      len(t.Events),
+		Content: content,
+		Start:   &visJSTime{start},
+		Title:   content,
+	}
+	t.Events = append(t.Events, e)
+
+	t.updateBoundaries(&e)
+
+	return t
+}
+
+func (t *Timeline) AddEventWithEnd(content string, start time.Time, end time.Time) *Timeline {
+	e := Event{
+		ID:      len(t.Events),
+		Content: content,
+		Start:   &visJSTime{start},
+		End:     &visJSTime{end},
+		Title:   content,
+	}
 	t.Events = append(t.Events, e)
 
 	t.updateBoundaries(&e)
@@ -82,8 +129,8 @@ func (t *Timeline) updateBoundaries(e *Event) {
 	span := t.LatestFinish.Sub(*t.EarliestStart)
 	paddingDuration := time.Duration(float32(span.Nanoseconds()) * padding)
 
-	t.Options.Start = visJSTime{t.EarliestStart.Add(paddingDuration * -1)}
-	t.Options.End = visJSTime{t.LatestFinish.Add(paddingDuration)}
+	t.Options.Start = &visJSTime{t.EarliestStart.Add(paddingDuration * -1)}
+	t.Options.End = &visJSTime{t.LatestFinish.Add(paddingDuration)}
 }
 
 func (t *Timeline) Reset() {
